@@ -3,6 +3,9 @@
 Query side of the spreads. Owns the user's spread-history read model and never produces domain
 events.
 
+**Vibe coding:** Claude remote control **and** Cursor (~$190 usage credits left after the hackathon).
+History GET is unauthenticated. See `docs/completeness-audit.md`.
+
 ## Responsibilities
 
 - Consumes `spread.created` from BullMQ, re-queries tarot-service-api for the spread's content and
