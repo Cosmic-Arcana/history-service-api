@@ -55,6 +55,7 @@ export class TypeOrmSpreadHistoryRepository implements SpreadHistoryRepositoryPo
       .getRepository(SpreadHistoryEntity)
       .createQueryBuilder('history')
       .where('history.userId = :userId', { userId })
+      .andWhere('history.deletedAt IS NULL')
       .orderBy('history.createdAt', 'DESC')
       .addOrderBy('history.spreadId', 'DESC')
       .limit(limit);
@@ -75,5 +76,18 @@ export class TypeOrmSpreadHistoryRepository implements SpreadHistoryRepositoryPo
       prediction,
       createdAt,
     }));
+  }
+
+  async markDeleted(userId: string, spreadId: string): Promise<boolean> {
+    const result = await this.dataSource
+      .getRepository(SpreadHistoryEntity)
+      .createQueryBuilder()
+      .update(SpreadHistoryEntity)
+      .set({ deletedAt: new Date() })
+      .where('spread_id = :spreadId', { spreadId })
+      .andWhere('user_id = :userId', { userId })
+      .andWhere('deleted_at IS NULL')
+      .execute();
+    return (result.affected ?? 0) > 0;
   }
 }

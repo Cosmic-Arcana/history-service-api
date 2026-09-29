@@ -24,4 +24,7 @@ export class SpreadHistoryEntity {
 
   @Column('timestamptz', { name: 'projected_at' })
   projectedAt: Date;
+
+  @Column('timestamptz', { name: 'deleted_at', nullable: true })
+  deletedAt: Date | null;
 }

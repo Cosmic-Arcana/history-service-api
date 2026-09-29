@@ -79,4 +79,26 @@ describe('Feature: read the spread history', () => {
       .get('/users/not-a-uuid/spread-history')
       .expect(400);
   });
+
+  it('Given a saved spread, When it is soft-deleted, Then it leaves the list and the row remains', async () => {
+    const spreadId = randomUUID();
+    await dataSource.query(
+      `INSERT INTO spread_history (spread_id, user_id, question, prediction, cards, created_at, projected_at)
+       VALUES ($1, $2, 'will the move work out?', 'stub prediction', $3, $4, now())`,
+      [spreadId, userId, JSON.stringify([]), '2026-09-20T10:00:00.000Z'],
+    );
+
+    await request(app.getHttpServer() as App)
+      .delete(`/users/${userId}/spread-history/${spreadId}`)
+      .expect(200);
+
+    const page = (await list().expect(200)).body as SpreadHistoryPageV1;
+    expect(page.items).toHaveLength(0);
+
+    const [{ count }] = await dataSource.query<[{ count: string }]>(
+      'SELECT count(*)::text AS count FROM spread_history WHERE spread_id = $1 AND deleted_at IS NOT NULL',
+      [spreadId],
+    );
+    expect(Number(count)).toBe(1);
+  });
 });
