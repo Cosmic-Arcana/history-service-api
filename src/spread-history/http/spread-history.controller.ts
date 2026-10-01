@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  GoneException,
   NotFoundException,
   Param,
   ParseUUIDPipe,
@@ -10,11 +11,16 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import type { SpreadHistoryPageV1 } from '@cosmic-arcana/sdk';
+import type { SpreadHistoryItemV1, SpreadHistoryPageV1 } from '@cosmic-arcana/sdk';
 import { decodeCursor, encodeCursor, InvalidCursorError } from '../application/history-cursor';
+import { GetSpreadHistoryItemQuery } from '../application/queries/get-spread-history-item.query';
 import { GetSpreadHistoryQuery } from '../application/queries/get-spread-history.query';
 import { SoftDeleteSpreadCommand } from '../application/commands/soft-delete-spread.command';
-import type { HistoryCursor, SpreadHistoryPage } from '../domain/spread-history-entry';
+import type {
+  HistoryCursor,
+  SpreadHistoryLookup,
+  SpreadHistoryPage,
+} from '../domain/spread-history-entry';
 import { DEFAULT_PAGE_SIZE, GetSpreadHistoryDto } from './get-spread-history.dto';
 import { InternalTokenGuard } from './internal-token.guard';
 
@@ -57,6 +63,31 @@ export class SpreadHistoryController {
         createdAt: entry.createdAt.toISOString(),
       })),
       nextCursor: page.nextCursor ? encodeCursor(page.nextCursor) : null,
+    };
+  }
+
+  @Get(':spreadId')
+  async one(
+    @Param('userId', new ParseUUIDPipe()) userId: string,
+    @Param('spreadId', new ParseUUIDPipe()) spreadId: string,
+  ): Promise<SpreadHistoryItemV1> {
+    const lookup: SpreadHistoryLookup = await this.queryBus.execute(
+      new GetSpreadHistoryItemQuery(userId, spreadId),
+    );
+    if (lookup.kind === 'removed') {
+      throw new GoneException('spread was removed');
+    }
+    if (lookup.kind === 'unknown') {
+      throw new NotFoundException('spread not found');
+    }
+
+    const { entry } = lookup;
+    return {
+      spreadId: entry.spreadId,
+      question: entry.question,
+      cards: entry.cards,
+      prediction: entry.prediction,
+      createdAt: entry.createdAt.toISOString(),
     };
   }
 
