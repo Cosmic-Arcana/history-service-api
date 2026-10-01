@@ -92,6 +92,24 @@ describe('Feature: project spread.created into the spread history', () => {
     expect(await countRows(dataSource, 'inbox')).toBe(1);
   });
 
+  it('Given a slow tarot lookup, When a burst of events arrives, Then they are projected in parallel and each exactly once', async () => {
+    const lookupMs = 200;
+    const events = Array.from({ length: 8 }, () => spreadCreated());
+    tarot.getSpread.mockImplementation(async (spreadId: string) => {
+      await new Promise((resolve) => setTimeout(resolve, lookupMs));
+      return spreadDetails(events.find((event) => event.spreadId === spreadId)!);
+    });
+
+    const startedAt = Date.now();
+    const outcomes = await Promise.all(events.map((event) => consume(event, event.eventId)));
+    const elapsed = Date.now() - startedAt;
+
+    expect(outcomes).toEqual(events.map(() => 'applied'));
+    expect(elapsed).toBeLessThan((events.length * lookupMs) / 2);
+    expect(await countRows(dataSource, 'spread_history')).toBe(events.length);
+    expect(await countRows(dataSource, 'inbox')).toBe(events.length);
+  });
+
   it('Given the same event projected concurrently, When both run, Then the inbox lets exactly one through', async () => {
     const event = spreadCreated();
     tarot.getSpread.mockResolvedValue(spreadDetails(event));
