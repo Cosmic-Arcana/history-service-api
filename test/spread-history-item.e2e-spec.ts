@@ -74,8 +74,12 @@ describe('Feature: read one saved spread', () => {
     await read(userId, spreadId).expect(404);
   });
 
-  it('Given a spread the history never saw, When it is read, Then it is reported unknown', async () => {
-    await read(userId, randomUUID()).expect(404);
+  it('Given a spread the history never saw, When it is read, Then it is reported unknown in the words callers rely on', async () => {
+    const response = await read(userId, randomUUID()).expect(404);
+
+    // The storefront treats only this exact message as "history has not seen it yet"; any other
+    // 404 (a proxy, an older history with no such route) is a failure to it, never "unknown".
+    expect((response.body as { message: string }).message).toBe('spread not found');
   });
 
   it('Given a removed spread, When it is read, Then it is reported gone, so a caller knows not to bring it back', async () => {
