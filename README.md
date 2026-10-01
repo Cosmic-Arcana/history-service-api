@@ -14,7 +14,8 @@ History GET is unauthenticated. See `docs/completeness-audit.md`.
   a redelivered event changes nothing.
 - `GET /users/:userId/spread-history?limit=&cursor=` — reads only from its own store.
 - `GET /users/:userId/spread-history/:spreadId` — one saved spread, however old. `404` when this
-  user has no such spread in the read model (it may simply not be projected yet), `410` when the
+  user has no such spread in the read model (it may simply not be projected yet; the body's
+  `message` is exactly `spread not found`, which callers rely on), `410` when the
   user removed it, so a caller never resurrects a removed spread from the write side.
 - `DELETE /users/:userId/spread-history/:spreadId` — soft-deletes a saved spread.
 
