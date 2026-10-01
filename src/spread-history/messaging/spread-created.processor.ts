@@ -45,7 +45,19 @@ export class SpreadCreatedProcessor extends WorkerHost implements OnApplicationB
 
   @OnWorkerEvent('error')
   onWorkerError(error: Error): void {
-    this.logger.error('broker connection failed', {
+    // BullMQ raises a lost lock as a plain Error with only this message to go on. It means a job
+    // outlived its lock (usually a stalled DB); the stalled check redelivers it and the inbox
+    // absorbs the repeat, so it is a warning, not a failure.
+    const lockLost = /^Missing lock for job (\S+)\. (\w+)$/.exec(error.message);
+    if (lockLost) {
+      this.logger.warn('job lock lost', {
+        jobId: lockLost[1],
+        command: lockLost[2],
+        errorName: error.name,
+      });
+      return;
+    }
+    this.logger.error('worker failed', {
       errorName: error.name,
       errorMessage: error.message,
     });
