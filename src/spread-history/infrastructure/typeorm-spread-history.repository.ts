@@ -5,7 +5,11 @@ import type {
   InboxRecord,
   SpreadHistoryRepositoryPort,
 } from '../application/ports/spread-history-repository.port';
-import type { HistoryCursor, SpreadHistoryEntry } from '../domain/spread-history-entry';
+import type {
+  HistoryCursor,
+  SpreadHistoryEntry,
+  SpreadHistoryLookup,
+} from '../domain/spread-history-entry';
 import { InboxEntity } from './inbox.entity';
 import { SpreadHistoryEntity } from './spread-history.entity';
 
@@ -76,6 +80,21 @@ export class TypeOrmSpreadHistoryRepository implements SpreadHistoryRepositoryPo
       prediction,
       createdAt,
     }));
+  }
+
+  async findOne(userId: string, spreadId: string): Promise<SpreadHistoryLookup> {
+    // The owner is part of the key, so another user's spread is indistinguishable from none.
+    const row = await this.dataSource
+      .getRepository(SpreadHistoryEntity)
+      .findOneBy({ spreadId, userId });
+    if (!row) {
+      return { kind: 'unknown' };
+    }
+    if (row.deletedAt) {
+      return { kind: 'removed' };
+    }
+    const { question, cards, prediction, createdAt } = row;
+    return { kind: 'found', entry: { spreadId, userId, question, cards, prediction, createdAt } };
   }
 
   async markDeleted(userId: string, spreadId: string): Promise<boolean> {

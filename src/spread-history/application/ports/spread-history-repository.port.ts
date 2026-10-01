@@ -1,4 +1,8 @@
-import type { HistoryCursor, SpreadHistoryEntry } from '../../domain/spread-history-entry';
+import type {
+  HistoryCursor,
+  SpreadHistoryEntry,
+  SpreadHistoryLookup,
+} from '../../domain/spread-history-entry';
 
 export const SPREAD_HISTORY_REPOSITORY = Symbol('SPREAD_HISTORY_REPOSITORY');
 
@@ -19,5 +23,6 @@ export interface SpreadHistoryRepositoryPort {
     limit: number,
     after: HistoryCursor | null,
   ): Promise<SpreadHistoryEntry[]>;
+  findOne(userId: string, spreadId: string): Promise<SpreadHistoryLookup>;
   markDeleted(userId: string, spreadId: string): Promise<boolean>;
 }

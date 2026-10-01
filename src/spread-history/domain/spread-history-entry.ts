@@ -19,3 +19,10 @@ export interface SpreadHistoryPage {
   entries: SpreadHistoryEntry[];
   nextCursor: HistoryCursor | null;
 }
+
+/**
+ * Why a lookup of one spread came back empty-handed matters to the caller: "removed" must never
+ * be answered from the write side, while "unknown" may simply mean the projection has not run yet.
+ */
+export type SpreadHistoryLookup =
+  { kind: 'found'; entry: SpreadHistoryEntry } | { kind: 'removed' } | { kind: 'unknown' };
