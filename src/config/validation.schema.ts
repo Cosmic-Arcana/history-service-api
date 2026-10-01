@@ -13,6 +13,7 @@ export const validationSchema = Joi.object({
 
   REDIS_HOST: Joi.string().hostname().default('127.0.0.1'),
   REDIS_PORT: Joi.number().port().default(6379),
+  SPREAD_CREATED_CONCURRENCY: Joi.number().integer().min(1).max(100).default(10),
 
   TAROT_SERVICE_URL: Joi.string()
     .uri({ scheme: ['http', 'https'] })
