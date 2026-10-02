@@ -1,14 +1,30 @@
-import { BadRequestException, Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
-import { QueryBus } from '@nestjs/cqrs';
+import {
+  BadRequestException,
+  Controller,
+  Delete,
+  Get,
+  NotFoundException,
+  Param,
+  ParseUUIDPipe,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import type { SpreadHistoryPageV1 } from '@cosmic-arcana/sdk';
 import { decodeCursor, encodeCursor, InvalidCursorError } from '../application/history-cursor';
 import { GetSpreadHistoryQuery } from '../application/queries/get-spread-history.query';
+import { SoftDeleteSpreadCommand } from '../application/commands/soft-delete-spread.command';
 import type { HistoryCursor, SpreadHistoryPage } from '../domain/spread-history-entry';
 import { DEFAULT_PAGE_SIZE, GetSpreadHistoryDto } from './get-spread-history.dto';
+import { InternalTokenGuard } from './internal-token.guard';
 
+@UseGuards(InternalTokenGuard)
 @Controller('users/:userId/spread-history')
 export class SpreadHistoryController {
-  constructor(private readonly queryBus: QueryBus) {}
+  constructor(
+    private readonly queryBus: QueryBus,
+    private readonly commandBus: CommandBus,
+  ) {}
 
   // TODO(auth): the user comes from the path until authority-service-api issues verified tokens.
   @Get()
@@ -42,5 +58,17 @@ export class SpreadHistoryController {
       })),
       nextCursor: page.nextCursor ? encodeCursor(page.nextCursor) : null,
     };
+  }
+
+  @Delete(':spreadId')
+  async remove(
+    @Param('userId', new ParseUUIDPipe()) userId: string,
+    @Param('spreadId', new ParseUUIDPipe()) spreadId: string,
+  ): Promise<{ deleted: true }> {
+    const deleted = await this.commandBus.execute(new SoftDeleteSpreadCommand(userId, spreadId));
+    if (!deleted) {
+      throw new NotFoundException('spread not found');
+    }
+    return { deleted: true };
   }
 }

@@ -1,4 +1,5 @@
-import { Logger } from '@nestjs/common';
+import { Logger, type OnApplicationBootstrap } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { CommandBus } from '@nestjs/cqrs';
 import { UnrecoverableError, type Job } from 'bullmq';
@@ -14,13 +15,27 @@ import {
   ProjectSpreadCreatedCommand,
   type ProjectionOutcome,
 } from '../application/commands/project-spread-created.command';
+import type { AppConfig } from '../../config/configuration';
 
 @Processor(SPREAD_CREATED_QUEUE)
-export class SpreadCreatedProcessor extends WorkerHost {
+export class SpreadCreatedProcessor extends WorkerHost implements OnApplicationBootstrap {
   private readonly logger = new Logger(SpreadCreatedProcessor.name);
 
-  constructor(private readonly commandBus: CommandBus) {
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly config: ConfigService,
+  ) {
     super();
+  }
+
+  // The worker only exists once the BullMQ explorer has run, so concurrency, which comes from
+  // validated config, is applied at bootstrap instead of in the static @Processor options.
+  // Projections are independent per spread and the inbox guards duplicates, so parallel is safe.
+  onApplicationBootstrap(): void {
+    this.worker.concurrency =
+      this.config.getOrThrow<AppConfig['spreadCreatedConsumer']>(
+        'spreadCreatedConsumer',
+      ).concurrency;
   }
 
   process(job: Job<unknown>): Promise<ProjectionOutcome> {

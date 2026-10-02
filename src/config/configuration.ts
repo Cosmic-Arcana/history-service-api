@@ -5,6 +5,7 @@ export interface AppConfig {
   http: { port: number };
   database: { url: string; runMigrations: boolean };
   redis: { host: string; port: number };
+  spreadCreatedConsumer: { concurrency: number };
   tarotService: { baseUrl: string; timeoutMs: number };
 }
 
@@ -18,6 +19,7 @@ export const configuration = (): AppConfig => ({
     runMigrations: process.env.DATABASE_RUN_MIGRATIONS === 'true',
   },
   redis: { host: process.env.REDIS_HOST as string, port: Number(process.env.REDIS_PORT) },
+  spreadCreatedConsumer: { concurrency: Number(process.env.SPREAD_CREATED_CONCURRENCY) },
   tarotService: {
     baseUrl: process.env.TAROT_SERVICE_URL as string,
     timeoutMs: Number(process.env.TAROT_SERVICE_TIMEOUT_MS),

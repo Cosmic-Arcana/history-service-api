@@ -27,6 +27,10 @@ export class HttpTarotSpreadsClient implements TarotSpreadsPort {
     if (isValidCorrelationId(correlationId)) {
       headers[CORRELATION_ID_HEADER] = correlationId;
     }
+    const internal = process.env.INTERNAL_SERVICE_TOKEN;
+    if (internal) {
+      headers['x-internal-token'] = internal;
+    }
 
     try {
       const response = await fetch(url, {

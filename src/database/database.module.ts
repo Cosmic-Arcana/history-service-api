@@ -5,6 +5,7 @@ import type { AppConfig } from '../config/configuration';
 import { InboxEntity } from '../spread-history/infrastructure/inbox.entity';
 import { SpreadHistoryEntity } from '../spread-history/infrastructure/spread-history.entity';
 import { CreateSpreadHistoryAndInbox1790092012000 } from './migrations/1790092012000-create-spread-history-and-inbox';
+import { AddSpreadHistoryDeletedAt1790092910000 } from './migrations/1790092910000-add-spread-history-deleted-at';
 
 @Module({
   imports: [
@@ -16,7 +17,10 @@ import { CreateSpreadHistoryAndInbox1790092012000 } from './migrations/179009201
           type: 'postgres',
           url: database.url,
           entities: [SpreadHistoryEntity, InboxEntity],
-          migrations: [CreateSpreadHistoryAndInbox1790092012000],
+          migrations: [
+            CreateSpreadHistoryAndInbox1790092012000,
+            AddSpreadHistoryDeletedAt1790092910000,
+          ],
           migrationsRun: database.runMigrations,
           synchronize: false,
           // TypeORM's logger writes to the console, which bypasses the structured logger.

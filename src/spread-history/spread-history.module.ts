@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { SPREAD_CREATED_QUEUE } from '@cosmic-arcana/sdk';
 import { ProjectSpreadCreatedHandler } from './application/commands/project-spread-created.handler';
+import { SoftDeleteSpreadHandler } from './application/commands/soft-delete-spread.handler';
 import { GetSpreadHistoryHandler } from './application/queries/get-spread-history.handler';
 import { SPREAD_HISTORY_REPOSITORY } from './application/ports/spread-history-repository.port';
 import { TAROT_SPREADS } from './application/ports/tarot-spreads.port';
@@ -17,6 +18,7 @@ import { SpreadHistoryController } from './http/spread-history.controller';
   controllers: [SpreadHistoryController],
   providers: [
     ProjectSpreadCreatedHandler,
+    SoftDeleteSpreadHandler,
     GetSpreadHistoryHandler,
     SpreadCreatedProcessor,
     { provide: SPREAD_HISTORY_REPOSITORY, useClass: TypeOrmSpreadHistoryRepository },

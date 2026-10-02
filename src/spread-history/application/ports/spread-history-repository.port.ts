@@ -19,4 +19,5 @@ export interface SpreadHistoryRepositoryPort {
     limit: number,
     after: HistoryCursor | null,
   ): Promise<SpreadHistoryEntry[]>;
+  markDeleted(userId: string, spreadId: string): Promise<boolean>;
 }
